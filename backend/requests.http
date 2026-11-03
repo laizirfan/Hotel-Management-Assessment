@@ -1,0 +1,107 @@
+POST http://localhost:5000/api/rooms
+Content-Type: application/json
+
+{
+    "name": "Standard Room",
+    "pricePerNight": 2000,
+    "capacity": 2,
+    "description": "Comfortable standard room",
+    "facilities": ["WiFi", "TV"],
+    "totalInventory": 10
+}
+
+### Register new guest
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+    "name": "Rahul",
+    "email": "rahul@example.com",
+    "password": "hello12345"
+}
+
+### jwt check
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "rahul@example.com",
+    "password": "hello12345"
+}
+
+### testing check without token
+
+POST http://localhost:5000/api/rooms
+Content-Type: application/json
+
+{
+    "name": "Premium Room",
+    "pricePerNight": 4500,
+    "capacity": 2,
+    "description": "Premium room with balcony",
+    "facilities": ["WiFi", "AC"],
+    "totalInventory": 3
+}
+
+
+#### with token check
+
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "rahul@example.com",
+    "password": "hello12345"
+}
+
+### room creat
+POST http://localhost:5000/api/rooms
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWU5YzcxZDhkMzRiNjFlMjkzOGY3ZWMiLCJyb2xlIjoiZ3Vlc3QiLCJpYXQiOjE3OTM3MTI4NDgsImV4cCI6MTc5Mzc5OTI0OH0.GJQ1_jzHsYoCdxPdAUkOHLcntRomHnKVFf0X2yMInR8
+
+{
+    "name": "Premium Room",
+    "pricePerNight": 4500,
+    "capacity": 2,
+    "description": "Premium room with balcony",
+    "facilities": ["WiFi", "AC"],
+    "totalInventory": 3
+}
+
+## staff--test
+
+### Register test staff account
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+    "name": "Hotel Staff",
+    "email": "staff@example.com",
+    "password": "staff12345"
+}
+
+
+### Staff login
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "staff@example.com",
+    "password": "staff12345"
+}
+
+###
+
+### Staff creates a room
+POST http://localhost:5000/api/rooms
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWU5ZTQwN2U5ZWQyNWNlMGI0Y2ZkZTkiLCJyb2xlIjoic3RhZmYiLCJpYXQiOjE3OTM3MTMzNTAsImV4cCI6MTc5Mzc5OTc1MH0.1Pm2O--pRRKxKo1eI3hv7nLylfuP3oh1lq23zFMst9E
+
+{
+    "name": "Premium Room",
+    "pricePerNight": 4500,
+    "capacity": 2,
+    "description": "Premium room with balcony",
+    "facilities": ["WiFi", "AC"],
+    "totalInventory": 3
+}

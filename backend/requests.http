@@ -57,8 +57,7 @@ Content-Type: application/json
 ### room creat
 POST http://localhost:5000/api/rooms
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWU5YzcxZDhkMzRiNjFlMjkzOGY3ZWMiLCJyb2xlIjoiZ3Vlc3QiLCJpYXQiOjE3OTM3MTI4NDgsImV4cCI6MTc5Mzc5OTI0OH0.GJQ1_jzHsYoCdxPdAUkOHLcntRomHnKVFf0X2yMInR8
-
+Authorization: Bearer PASTE_TOKEN_HERE
 {
     "name": "Premium Room",
     "pricePerNight": 4500,
@@ -95,8 +94,7 @@ Content-Type: application/json
 ### Staff creates a room
 POST http://localhost:5000/api/rooms
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWU5ZTQwN2U5ZWQyNWNlMGI0Y2ZkZTkiLCJyb2xlIjoic3RhZmYiLCJpYXQiOjE3OTM3MTMzNTAsImV4cCI6MTc5Mzc5OTc1MH0.1Pm2O--pRRKxKo1eI3hv7nLylfuP3oh1lq23zFMst9E
-
+Authorization: Bearer PASTE_TOKEN_HERE
 {
     "name": "Premium Room",
     "pricePerNight": 4500,

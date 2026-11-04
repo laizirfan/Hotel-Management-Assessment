@@ -2,6 +2,7 @@ import { Router } from "express";
 import Reservation from "../models/Reservation";
 import roomType from "../models/RoomType";
 import { authMiddleware, AuthRequest } from "../middleware/authMiddleware";
+import mongoose from "mongoose";
 
 const router = Router();
 router.post("/", authMiddleware, async (req: AuthRequest, res) => {
@@ -52,6 +53,54 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
                 message: "Rooms booked must be a positive whole number"
             });
         }
+
+        if (!mongoose.isValidObjectId(roomTypeId)) {
+            return res.status(400).json({
+                message: "Invalid room type ID"
+            });
+        }
+
+        const room = await roomType.findById(roomTypeId);
+
+        if (!room || !room.active) {
+            return res.status(404).json({
+                message: "Room type not found"
+            });
+        }
+
+        if (roomsBooked > room.totalInventory) {
+            return res.status(400).json({
+                message: "Requested rooms exceed total inventory"
+            });
+        }
+
+        const totalPrice = numberOfNights * room.pricePerNight * roomsBooked;
+
+        const overlappingReservations = await Reservation.find({
+    roomType: room._id,
+    status: { $in: ["confirmed", "checked_in"] },
+    checkIn: { $lt: endDate },
+    checkOut: { $gt: startDate }
+});
+
+for (
+    let date = new Date(startDate);
+    date < endDate;
+    date.setUTCDate(date.getUTCDate() + 1)
+) {
+    let bookedRooms = 0;
+    for (const reservation of overlappingReservations) {
+        if (reservation.checkIn <= date && reservation.checkOut > date) {
+            bookedRooms += reservation.roomsBooked;
+        }
+    }
+    const availableRooms = room.totalInventory - bookedRooms;
+    if (roomsBooked > availableRooms) {
+        return res.status(409).json({
+            message: "Not enough rooms available for the selected dates"
+        });
+    }
+}
 
     } catch (error) {
         console.error(error);

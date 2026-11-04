@@ -1,8 +1,9 @@
 import { Router } from "express";
 import Reservation from "../models/Reservation";
 import roomType from "../models/RoomType";
-import { authMiddleware, AuthRequest } from "../middleware/authMiddleware";
+import { authMiddleware, staffOnly, AuthRequest } from "../middleware/authMiddleware";
 import mongoose from "mongoose";
+import User from "../models/User";
 
 const router = Router();
 
@@ -88,7 +89,7 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
                 //  Find overlapping reservations
                 const currentReservations = await Reservation.find({
                     roomType: room._id,
-                    status: { $in: ["confirmed", "checked_in"] },
+                    status: { $in: ["confirmed", "checked_in", "checked_out"] },
                     checkIn: { $lt: endDate },
                     checkOut: { $gt: startDate }
                 }).session(session);
@@ -121,16 +122,16 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
                 );
 
                 //  Create reservation
-        const createdReservations =   await Reservation.create(
+                const createdReservations = await Reservation.create(
                     [{
-                            guest: req.user!.userId,
-                            roomType: room._id,
-                            checkIn: startDate,
-                            checkOut: endDate,
-                            roomsBooked: roomsBooked,
-                            totalPrice: totalPrice,
-                            status: "confirmed"
-                        }
+                        guest: req.user!.userId,
+                        roomType: room._id,
+                        checkIn: startDate,
+                        checkOut: endDate,
+                        roomsBooked: roomsBooked,
+                        totalPrice: totalPrice,
+                        status: "confirmed"
+                    }
                     ],
                     { session }
                 );
@@ -141,28 +142,28 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
             await session.endSession();
         }
 
-return res.status(201).json({
-    message: "Reservation created successfully",
-    reservation: createdReservation
-});
+        return res.status(201).json({
+            message: "Reservation created successfully",
+            reservation: createdReservation
+        });
 
     } catch (error) {
-         if (error instanceof Error) {
-        if (error.message === "ROOM_NOT_FOUND") {
-            return res.status(404).json({
-                message: "Room type not found"
-            });
+        if (error instanceof Error) {
+            if (error.message === "ROOM_NOT_FOUND") {
+                return res.status(404).json({
+                    message: "Room type not found"
+                });
+            }
+            if (error.message === "ROOM_NOT_AVAILABLE") {
+                return res.status(409).json({
+                    message: "Not enough rooms available"
+                });
+            }
         }
-        if (error.message === "ROOM_NOT_AVAILABLE") {
-            return res.status(409).json({
-                message: "Not enough rooms available"
-            });
-        }
-    }
-    console.error(error);
-    return res.status(500).json({
-        message: "Booking failed"
-    });
+        console.error(error);
+        return res.status(500).json({
+            message: "Booking failed"
+        });
     }
 });
 
@@ -173,8 +174,8 @@ router.get("/my", authMiddleware, async (req: AuthRequest, res) => {
         const reservations = await Reservation.find({
             guest: req.user!.userId
         })
-        .populate("roomType", "name pricePerNight capacity")
-        .sort({ createdAt: -1 });
+            .populate("roomType", "name pricePerNight capacity")
+            .sort({ createdAt: -1 });
 
         return res.status(200).json({
             message: "Reservations fetched successfully",
@@ -261,6 +262,184 @@ router.patch("/:id/cancel", authMiddleware, async (req: AuthRequest, res) => {
 
     } finally {
         await session.endSession();
+    }
+});
+
+
+// Staff - View reservations with filtering and pagination
+router.get("/staff/all", authMiddleware, staffOnly, async (req, res) => {
+    try {
+        const { status, search } = req.query;
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        const filter: Record<string, unknown> = {};
+
+        if (typeof status === "string" && status) {
+            const allowedStatuses = [
+                "confirmed",
+                "checked_in",
+                "checked_out",
+                "cancelled"
+            ];
+
+            if (!allowedStatuses.includes(status)) {
+                return res.status(400).json({
+                    message: "Invalid reservation status"
+                });
+            }
+
+            filter.status = status;
+        }
+        // Search reservations by guest name or email
+        if (typeof search === "string" && search.trim()) {
+            const searchText = search.trim();
+            if (searchText.length > 100) {
+                return res.status(400).json({
+                    message: "Search must be 100 characters or fewer"
+                });
+            }
+
+            const safeSearch = searchText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+            const matchingGuests = await User.find({
+                $or: [
+                    { name: { $regex: safeSearch, $options: "i" } },
+                    { email: { $regex: safeSearch, $options: "i" } }
+                ]
+            }).select("_id");
+
+            filter.guest = {
+                $in: matchingGuests.map((guest) => guest._id)
+            };
+        }
+
+        const [reservations, total] = await Promise.all([
+            Reservation.find(filter)
+                .populate("guest", "name email")
+                .populate("roomType", "name pricePerNight")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+
+            Reservation.countDocuments(filter)
+        ]);
+
+        return res.status(200).json({
+            message: "Reservations fetched successfully",
+            reservations,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to fetch reservations"
+        });
+    }
+});
+
+
+// Staff - Check in a guest
+router.patch("/:id/check-in", authMiddleware, staffOnly, async (req, res) => {
+    try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                message: "Invalid reservation ID"
+            });
+        }
+        const reservation = await Reservation.findById(req.params.id);
+        if (!reservation) {
+            return res.status(404).json({
+                message: "Reservation not found"
+            });
+        }
+        if (reservation.status !== "confirmed") {
+            return res.status(409).json({
+                message: "Only confirmed reservations can be checked in"
+            });
+        }
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+        if (today < reservation.checkIn || today >= reservation.checkOut) {
+            return res.status(409).json({
+                message: "Check-in is only allowed during the reservation dates"
+            });
+        }
+        const updatedReservation = await Reservation.findOneAndUpdate(
+            {
+                _id: reservation._id,
+                status: "confirmed"
+            },
+            { $set: { status: "checked_in" } },
+            { new: true }
+        );
+        if (!updatedReservation) {
+            return res.status(409).json({
+                message: "Reservation status has already changed"
+            });
+        }
+        return res.status(200).json({
+            message: "Guest checked in successfully",
+            reservation: updatedReservation
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: "Check-in failed"
+        });
+    }
+});
+
+
+// Staff - Check out a guest
+router.patch("/:id/check-out", authMiddleware, staffOnly, async (req, res) => {
+    try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                message: "Invalid reservation ID"
+            });
+        }
+        const reservation = await Reservation.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                status: "checked_in"
+            },
+            {
+                $set: { status: "checked_out" }
+            },
+            { new: true }
+        );
+
+        if (!reservation) {
+            const existingReservation = await Reservation.findById(req.params.id);
+            if (!existingReservation) {
+                return res.status(404).json({
+                    message: "Reservation not found"
+                });
+            }
+            return res.status(409).json({
+                message: "Only checked-in reservations can be checked out"
+            });
+        }
+
+        return res.status(200).json({
+            message: "Guest checked out successfully",
+            reservation
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: "Check-out failed"
+        });
     }
 });
 

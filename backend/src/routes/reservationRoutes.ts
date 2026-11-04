@@ -166,4 +166,103 @@ return res.status(201).json({
     }
 });
 
+
+// Get reservations of the logged-in guest
+router.get("/my", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const reservations = await Reservation.find({
+            guest: req.user!.userId
+        })
+        .populate("roomType", "name pricePerNight capacity")
+        .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            message: "Reservations fetched successfully",
+            reservations
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: "Failed to fetch reservations"
+        });
+    }
+});
+
+
+router.patch("/:id/cancel", authMiddleware, async (req: AuthRequest, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+        return res.status(400).json({
+            message: "Invalid reservation ID"
+        });
+    }
+
+    const session = await mongoose.startSession();
+    try {
+        let cancelledReservation;
+
+        await session.withTransaction(async () => {
+            const reservation = await Reservation.findById(req.params.id)
+                .session(session);
+
+            if (!reservation) {
+                throw new Error("RESERVATION_NOT_FOUND");
+            }
+
+            if (reservation.guest.toString() !== req.user!.userId) {
+                throw new Error("NOT_ALLOWED");
+            }
+
+            if (reservation.status !== "confirmed") {
+                throw new Error("CANNOT_CANCEL");
+            }
+            const today = new Date();
+            today.setUTCHours(0, 0, 0, 0);
+            if (reservation.checkIn < today) {
+                throw new Error("CANNOT_CANCEL");
+            }
+            await roomType.updateOne(
+                { _id: reservation.roomType },
+                { $inc: { bookingVersion: 1 } },
+                { session }
+            );
+            reservation.status = "cancelled";
+            await reservation.save({ session });
+            cancelledReservation = reservation;
+        });
+
+        return res.status(200).json({
+            message: "Reservation cancelled successfully",
+            reservation: cancelledReservation
+        });
+
+    } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === "RESERVATION_NOT_FOUND") {
+                return res.status(404).json({
+                    message: "Reservation not found"
+                });
+            }
+            if (error.message === "NOT_ALLOWED") {
+                return res.status(403).json({
+                    message: "You cannot cancel another guest's reservation"
+                });
+            }
+            if (error.message === "CANNOT_CANCEL") {
+                return res.status(409).json({
+                    message: "This reservation cannot be cancelled"
+                });
+            }
+        }
+        console.error(error);
+        return res.status(500).json({
+            message: "Cancellation failed"
+        });
+
+    } finally {
+        await session.endSession();
+    }
+});
+
+
 export default router;

@@ -103,3 +103,34 @@ Authorization: Bearer PASTE_TOKEN_HERE
     "facilities": ["WiFi", "AC"],
     "totalInventory": 3
 }
+
+## reservation testing
+
+### Create Reservation
+POST http://localhost:5000/api/reservations
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWU5YzcxZDhkMzRiNjFlMjkzOGY3ZWMiLCJyb2xlIjoiZ3Vlc3QiLCJpYXQiOjE3OTM3NzU3MTAsImV4cCI6MTc5Mzg2MjExMH0.KwAVoczpMYyren51bkZPLXcljzb00UfoIGQQZBUCMYg
+
+{
+    "roomTypeId": "6ae9aaa87f31a23819bb1a96",
+    "checkIn": "2026-11-10",
+    "checkOut": "2026-11-12",
+    "roomsBooked": 1
+}
+
+
+### Get All Active Rooms
+GET http://localhost:5000/api/rooms
+
+
+### Create Reservation - Different Dates
+POST http://localhost:5000/api/reservations
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWU5YzcxZDhkMzRiNjFlMjkzOGY3ZWMiLCJyb2xlIjoiZ3Vlc3QiLCJpYXQiOjE3OTM3NzU3MTAsImV4cCI6MTc5Mzg2MjExMH0.KwAVoczpMYyren51bkZPLXcljzb00UfoIGQQZBUCMYg
+
+{
+    "roomTypeId": "6ae9aaa87f31a23819bb1a96",
+    "checkIn": "2026-11-15",
+    "checkOut": "2026-11-17",
+    "roomsBooked": 1
+}

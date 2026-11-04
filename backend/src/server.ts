@@ -3,13 +3,14 @@ import "dotenv/config";
 import { connectDB } from "./config/db";
 import roomRoutes from "./routes/roomRoutes";
 import authRoutes from "./routes/authRoutes";
+import reservationRoutes from "./routes/reservationRoutes";
 
 const app = express();
 
 app.use(express.json());
 app.use("/api/rooms", roomRoutes);
 app.use("/api/auth", authRoutes);
-
+app.use("/api/reservations", reservationRoutes);
 
 app.get('/', (req, res) => {
     res.send("Hotel Managment API running");

@@ -29,6 +29,10 @@ const roomTypeSchema = new mongoose.Schema(
             required: true,
             min: 0
         },
+        bookingVersion: {
+            type: Number,
+            default: 0
+        },
         active: {
             type: Boolean,
             default: true

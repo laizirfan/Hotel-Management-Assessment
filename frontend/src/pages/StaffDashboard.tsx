@@ -84,6 +84,8 @@ const [showCreateRoom, setShowCreateRoom] = useState(false);
         throw new Error(data.message || 'Failed to create room');
       }
       setMessage('Room type created successfully!');
+      toast.success('Room type created successfully!');
+setShowCreateRoom(false);
       setName('');
       setPrice('');
       setCapacity('');
@@ -352,7 +354,17 @@ setTotalPages(data.pagination.totalPages);
 </div>
 {activeSection === 'rooms' && (
   <>
+  <div style={{ marginTop: '25px', marginBottom: '20px' }}>
+  <button
+    className="book-btn"
+    onClick={() => setShowCreateRoom(!showCreateRoom)}
+  >
+    {showCreateRoom ? 'Cancel' : '+ Create New Room'}
+  </button>
+</div>
+{showCreateRoom && (
       <div className="form-container">
+        
         <h2>Create New Room Type</h2>
         <form onSubmit={createRoom}>
           <input
@@ -387,6 +399,8 @@ setTotalPages(data.pagination.totalPages);
         </form>
         {message && <p>{message}</p>}
       </div>
+      )}
+      
       <h2 style={{ marginTop: '35px' }}>Existing Room Types</h2>
       {loading && <p>Loading rooms...</p>}
       {error && <p>{error}</p>}

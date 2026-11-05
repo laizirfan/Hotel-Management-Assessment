@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
+import { RefreshCw } from 'lucide-react';
 
 type Room = {
   _id: string;
@@ -53,6 +54,17 @@ const [totalPages, setTotalPages] = useState(1);
 
 const [activeSection, setActiveSection] = useState<'rooms' | 'reservations'>('rooms');
 const [showCreateRoom, setShowCreateRoom] = useState(false);
+
+const roomActionRef = useRef<HTMLDivElement | null>(null);
+
+useEffect(() => {
+  if (editingRoom || inventoryRoom) {
+    roomActionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
+}, [editingRoom, inventoryRoom]);
 
 
   async function createRoom(e: React.SubmitEvent<HTMLFormElement>) {
@@ -417,6 +429,7 @@ setTotalPages(data.pagination.totalPages);
               className="book-btn"
               style={{ marginLeft: '10px' }}
               onClick={() => {
+                setEditingRoom(null);
                 setInventoryRoom(room);
                 setNewInventory(String(room.totalInventory));
                 setInventoryMessage('');
@@ -429,7 +442,7 @@ setTotalPages(data.pagination.totalPages);
       </div>
 
       {editingRoom && (
-        <div className="form-container">
+        <div className="form-container"  ref={roomActionRef}>
           <h2>Edit {editingRoom.name}</h2>
 
           <form onSubmit={updateRoom}>
@@ -502,7 +515,7 @@ setTotalPages(data.pagination.totalPages);
       )}
 
       {inventoryRoom && (
-        <div className="form-container">
+        <div className="form-container" ref={roomActionRef}>
           <h2>Manage Inventory — {inventoryRoom.name}</h2>
           <p>Current Inventory: {inventoryRoom.totalInventory}</p>
           <form onSubmit={updateInventory}>
@@ -513,9 +526,12 @@ setTotalPages(data.pagination.totalPages);
               required
             />
             <button type="submit">Update Inventory</button>
-            <button type="button" onClick={() => setInventoryRoom(null)}>
-              Cancel
-            </button>
+        <button
+  type="button"
+  onClick={() => setInventoryRoom(null)}
+>
+  Cancel
+</button>
           </form>
           {inventoryMessage && <p>{inventoryMessage}</p>}
         </div>
@@ -524,8 +540,41 @@ setTotalPages(data.pagination.totalPages);
 )}
 
 {activeSection === 'reservations' && (
-      <div style={{ marginTop: '40px' }}>
-        <h2>Guest Reservations</h2>
+      <div style={{ marginTop: '30px' }}>
+      <div style={{ marginBottom: '20px' }}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px'
+    }}>
+      <h2 style={{ margin: 0 }}>Guest Reservations</h2>
+
+      <button
+        type="button"
+        onClick={() => fetchReservations(page)}
+        disabled={reservationLoading}
+        title="Refresh Reservations"
+        aria-label="Refresh Reservations"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '34px',
+          height: '34px',
+          padding: 0,
+          border: '1px solid #cbd5e1',
+          borderRadius: '8px',
+          background: 'white',
+          color: '#1e293b',
+          cursor: reservationLoading ? 'wait' : 'pointer'
+        }}
+      >
+        <RefreshCw size={17} />
+      </button>
+    </div>
+
+    <p>Search bookings and manage guest check-ins and check-outs.</p>
+  </div>
         <div className="reservation-filters">
           <label>
             Search Guest
@@ -556,6 +605,8 @@ setTotalPages(data.pagination.totalPages);
             Search Reservations
           </button>
         </div>
+
+
         {reservationLoading && <p>Loading reservations...</p>}
         {reservationError && <p>{reservationError}</p>}
         <div className="room-grid">
@@ -604,6 +655,7 @@ setTotalPages(data.pagination.totalPages);
   </div>
 )}
         </div>
+      
       )}
     </div>
   );

@@ -51,6 +51,9 @@ function StaffDashboard() {
   const [page, setPage] = useState(1);
 const [totalPages, setTotalPages] = useState(1);
 
+const [activeSection, setActiveSection] = useState<'rooms' | 'reservations'>('rooms');
+const [showCreateRoom, setShowCreateRoom] = useState(false);
+
 
   async function createRoom(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -313,19 +316,42 @@ setTotalPages(data.pagination.totalPages);
     <div>
       <h1>Staff Dashboard</h1>
       <p>Manage hotel rooms and guest reservations here.</p>
-      <div className="dashboard-grid">
-        <div className="dashboard-card">
-          <h2>Room Management</h2>
-          <p>Add new room types, update prices and manage inventory.</p>
-        </div>
-        <div className="dashboard-card">
-          <h2>Reservations</h2>
-          <p>View guest bookings, check guests in and check them out.</p>
-          <button className="book-btn" onClick={() => fetchReservations(1)}>
-            View All Reservations
-          </button>
-        </div>
-      </div>
+    <div className="dashboard-grid">
+
+  <div
+    className="dashboard-card"
+    onClick={() => setActiveSection('rooms')}
+    style={{
+      cursor: 'pointer',
+      border: activeSection === 'rooms'
+        ? '2px solid #2563eb'
+        : '2px solid transparent'
+    }}
+  >
+    <h2>Room Management</h2>
+    <p>Add room types, update prices and manage inventory.</p>
+  </div>
+
+  <div
+    className="dashboard-card"
+    onClick={() => {
+      setActiveSection('reservations');
+      fetchReservations(1);
+    }}
+    style={{
+      cursor: 'pointer',
+      border: activeSection === 'reservations'
+        ? '2px solid #2563eb'
+        : '2px solid transparent'
+    }}
+  >
+    <h2>Reservations</h2>
+    <p>View guest bookings, check guests in and check them out.</p>
+  </div>
+
+</div>
+{activeSection === 'rooms' && (
+  <>
       <div className="form-container">
         <h2>Create New Room Type</h2>
         <form onSubmit={createRoom}>
@@ -480,7 +506,10 @@ setTotalPages(data.pagination.totalPages);
           {inventoryMessage && <p>{inventoryMessage}</p>}
         </div>
       )}
+        </>
+)}
 
+{activeSection === 'reservations' && (
       <div style={{ marginTop: '40px' }}>
         <h2>Guest Reservations</h2>
         <div className="reservation-filters">
@@ -560,7 +589,8 @@ setTotalPages(data.pagination.totalPages);
     </button>
   </div>
 )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

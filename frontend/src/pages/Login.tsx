@@ -3,6 +3,7 @@ import { useState ,useEffect} from 'react';
 import type { FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 type LoginProps = {
   onLoginSuccess: (token: string, role: string) => void;
@@ -14,6 +15,7 @@ function Login({ onLoginSuccess }: LoginProps) {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -24,10 +26,14 @@ useEffect(() => {
 }, [location.key]);
 
   async function handleLogin(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setMessage('');
+  e.preventDefault();
 
-    try {
+  if (loading) return;
+
+  setMessage('');
+  setLoading(true);
+
+  try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -57,6 +63,9 @@ if (response.ok && data.token) {
       }
     } catch {
       setMessage('Cannot connect to the server');
+    }
+    finally {
+      setLoading(false);
     }
   }
 
@@ -94,7 +103,9 @@ if (response.ok && data.token) {
   </button>
 </div>
 
-        <button type="submit">Login</button>
+<button type="submit" disabled={loading}>
+  {loading ? <LoadingSpinner text="Logging in..." /> : 'Login'}
+</button>
       </form>
 
       <p>{message}</p>

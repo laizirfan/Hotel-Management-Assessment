@@ -1,0 +1,31 @@
+.loading-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.bar-spinner {
+  position: relative;
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  animation: bar-spin 1s linear infinite;
+}
+
+.bar-spinner span {
+  position: absolute;
+  left: 45%;
+  top: 2%;
+  width: 10%;
+  height: 25%;
+  background: currentColor;
+  border-radius: 3px;
+  transform-origin: 50% 192%;
+}
+
+@keyframes bar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

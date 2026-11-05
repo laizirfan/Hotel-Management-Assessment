@@ -320,3 +320,61 @@
   color: #475569;
   line-height: 1.6;
 }
+
+/* Staff reservation search and filters */
+/* Staff reservation search and filters */
+
+.reservation-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.reservation-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 227px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.reservation-filters input,
+.reservation-filters select,
+.reservation-filters button {
+  width: 227px;
+  height: 45px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.reservation-filters input,
+.reservation-filters select {
+  background-color: white;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+}
+
+.reservation-filters button {
+  background-color: #64748b;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.reservation-filters button:hover {
+  background-color: #475569;
+}
+
+@media (max-width: 768px) {
+  .reservation-filters label,
+  .reservation-filters input,
+  .reservation-filters select,
+  .reservation-filters button {
+    width: 100%;
+  }
+}

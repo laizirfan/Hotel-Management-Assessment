@@ -609,30 +609,68 @@ setTotalPages(data.pagination.totalPages);
 
         {reservationLoading && <p>Loading reservations...</p>}
         {reservationError && <p>{reservationError}</p>}
-        <div className="room-grid">
-          {reservations.map((reservation) => (
-            <div className="room-card" key={reservation._id}>
-              <h2>{reservation.guest?.name || 'Guest'}</h2>
-              <p>Email: {reservation.guest?.email || 'N/A'}</p>
-              <p>Room: {reservation.roomType?.name || 'N/A'}</p>
-              <p>Check-in: {new Date(reservation.checkIn).toLocaleDateString()}</p>
-              <p>Check-out: {new Date(reservation.checkOut).toLocaleDateString()}</p>
-              <p>Rooms Booked: {reservation.roomsBooked}</p>
-              <p>Total Price: ₹{reservation.totalPrice}</p>
-              <p>Status: <strong>{reservation.status}</strong></p>
+        <div className="reservation-grid">
+  {reservations.map((reservation) => (
+    <div className="reservation-card" key={reservation._id}>
 
-              {reservation.status === 'confirmed' && (
-                <button className="book-btn" onClick={() => updateReservationStatus(reservation._id, 'check-in')}>
-                  Check In</button>
-              )}
-
-              {reservation.status === 'checked_in' && (
-                <button className="book-btn" onClick={() => updateReservationStatus(reservation._id, 'check-out')}>
-                  Check Out</button>
-              )}
-            </div>
-          ))}
+      <div className="reservation-card-header">
+        <div>
+          <h3>{reservation.guest?.name || 'Guest'}</h3>
+          <p>{reservation.guest?.email || 'N/A'}</p>
         </div>
+
+        <span className={`status-badge ${reservation.status}`}>
+          {reservation.status.replace('_', ' ')}
+        </span>
+      </div>
+
+      <div className="reservation-room">
+        <strong>{reservation.roomType?.name || 'N/A'}</strong>
+      </div>
+
+      <div className="reservation-details">
+        <div>
+          <small>CHECK-IN</small>
+          <strong>{new Date(reservation.checkIn).toLocaleDateString()}</strong>
+        </div>
+
+        <div>
+          <small>CHECK-OUT</small>
+          <strong>{new Date(reservation.checkOut).toLocaleDateString()}</strong>
+        </div>
+
+        <div>
+          <small>ROOMS BOOKED</small>
+          <strong>{reservation.roomsBooked}</strong>
+        </div>
+
+        <div>
+          <small>TOTAL PRICE</small>
+          <strong>₹{reservation.totalPrice.toLocaleString('en-IN')}</strong>
+        </div>
+      </div>
+
+      {reservation.status === 'confirmed' && (
+        <button
+          className="book-btn reservation-action"
+          onClick={() => updateReservationStatus(reservation._id, 'check-in')}
+        >
+          Check In
+        </button>
+      )}
+
+      {reservation.status === 'checked_in' && (
+        <button
+          className="book-btn reservation-action"
+          onClick={() => updateReservationStatus(reservation._id, 'check-out')}
+        >
+          Check Out
+        </button>
+      )}
+
+    </div>
+  ))}
+</div>
         {reservations.length > 0 && (
   <div style={{ display: 'flex', gap: '15px', marginTop: '20px', alignItems: 'center' }}>
     <button

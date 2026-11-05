@@ -2,6 +2,9 @@ import { Link, Route, Routes } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import './App.css';
+import Rooms from './pages/Rooms';
+import MyReservations from './pages/MyReservations';
+import StaffDashboard from './pages/StaffDashboard';
 
 function App() {
   return (
@@ -14,27 +17,17 @@ function App() {
           <Link to="/my-reservations">My Reservations</Link>
           <Link to="/login">Login</Link>
           <Link to="/register">Register</Link>
+          <Link to="/staff">Staff Dashboard</Link>
         </div>
       </nav>
 
       <main className="container">
         <Routes>
-          <Route
-            path="/"
-            element={
-              <div>
-                <h1>Welcome to Our Hotel</h1>
-                <p>Find and book your perfect room.</p>
-              </div>
-            }
-          />
-
+          <Route path="/"element={<Rooms /> } />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route
-            path="/my-reservations"
-            element={<p>My Reservations page coming soon.</p>}
-          />
+          <Route path="/my-reservations" element={<MyReservations />} />
+          <Route path="/staff" element={<StaffDashboard />} />
         </Routes>
       </main>
     </div>

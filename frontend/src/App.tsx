@@ -6,6 +6,7 @@ import Rooms from './pages/Rooms';
 import MyReservations from './pages/MyReservations';
 import StaffDashboard from './pages/StaffDashboard';
 import { useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
 
@@ -28,8 +29,8 @@ function handleLoginSuccess(newToken: string, newRole: string) {
 
   return (
     <div>
+    <Toaster position="top-right" />
       <nav className="navbar">
-
         <h2>Hotel Management</h2>
 
     <div className="nav-links">

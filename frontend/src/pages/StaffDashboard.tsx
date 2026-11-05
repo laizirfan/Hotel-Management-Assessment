@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 type Room = {
   _id: string;
@@ -200,6 +201,7 @@ const [totalPages, setTotalPages] = useState(1);
 
   async function fetchReservations(pageNumber = 1) {
 
+    
       // API request here
 
     const token = sessionStorage.getItem('token');
@@ -249,14 +251,11 @@ setTotalPages(data.pagination.totalPages);
     action: 'check-in' | 'check-out'
   ) {
     const token = sessionStorage.getItem('token');
-
     if (!token) {
       setReservationError('Please login as staff');
       return;
     }
-
     setReservationError('');
-
     try {
       const response = await fetch(
         `/api/reservations/${reservationId}/${action}`,
@@ -267,21 +266,26 @@ setTotalPages(data.pagination.totalPages);
           },
         }
       );
-
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to update reservation');
       }
 
-      await fetchReservations();
+      toast.success(
+  action === 'check-in'
+    ? 'Guest checked in successfully!'
+    : 'Guest checked out successfully!'
+);
+
+  await fetchReservations(page);
 
     } catch (error) {
-      setReservationError(
-        error instanceof Error
-          ? error.message
-          : 'Something went wrong'
-      );
+       toast.error(
+    error instanceof Error
+      ? error.message
+      : 'Something went wrong'
+  );
     }
   }
 
@@ -305,6 +309,7 @@ setTotalPages(data.pagination.totalPages);
   }, []);
 
   return (
+
     <div>
       <h1>Staff Dashboard</h1>
       <p>Manage hotel rooms and guest reservations here.</p>

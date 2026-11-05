@@ -4,8 +4,11 @@ import type { FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 
-function Login() {
+type LoginProps = {
+  onLoginSuccess: (token: string, role: string) => void;
+};
 
+function Login({ onLoginSuccess }: LoginProps) {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,7 +41,7 @@ useEffect(() => {
 if (response.ok && data.token) {
   sessionStorage.setItem('token', data.token);
   sessionStorage.setItem('role', data.user.role);
-
+ onLoginSuccess(data.token, data.user.role);
   setEmail('');
   setPassword('');
 

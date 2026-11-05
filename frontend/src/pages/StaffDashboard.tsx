@@ -47,6 +47,9 @@ function StaffDashboard() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
+  const [page, setPage] = useState(1);
+const [totalPages, setTotalPages] = useState(1);
+
 
   async function createRoom(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -195,7 +198,10 @@ function StaffDashboard() {
     }
   }
 
-  async function fetchReservations() {
+  async function fetchReservations(pageNumber = 1) {
+
+      // API request here
+
     const token = sessionStorage.getItem('token');
     if (!token) {
       setReservationError('Please login as staff');
@@ -205,6 +211,7 @@ function StaffDashboard() {
     setReservationError('');
     try {
       const params = new URLSearchParams();
+      params.set('page', String(pageNumber));
 
       if (search.trim()) {
         params.set('search', search.trim());
@@ -224,7 +231,9 @@ function StaffDashboard() {
       if (!response.ok) {
         throw new Error(data.message || 'Failed to load reservations');
       }
-      setReservations(data.reservations);
+setReservations(data.reservations);
+setPage(data.pagination.page);
+setTotalPages(data.pagination.totalPages);
     } catch (error) {
       setReservationError(
         error instanceof Error ? error.message : 'Something went wrong'
@@ -307,7 +316,7 @@ function StaffDashboard() {
         <div className="dashboard-card">
           <h2>Reservations</h2>
           <p>View guest bookings, check guests in and check them out.</p>
-          <button className="book-btn" onClick={fetchReservations}>
+          <button className="book-btn" onClick={() => fetchReservations(1)}>
             View All Reservations
           </button>
         </div>
@@ -495,7 +504,7 @@ function StaffDashboard() {
             </select>
           </label>
 
-          <button className="book-btn" onClick={fetchReservations}>
+          <button className="book-btn" onClick={() => fetchReservations(1)}>
             Search Reservations
           </button>
         </div>
@@ -525,6 +534,27 @@ function StaffDashboard() {
             </div>
           ))}
         </div>
+        {reservations.length > 0 && (
+  <div style={{ display: 'flex', gap: '15px', marginTop: '20px', alignItems: 'center' }}>
+    <button
+      className="book-btn"
+      disabled={page === 1 || reservationLoading}
+      onClick={() => fetchReservations(page - 1)}
+    >
+      Previous
+    </button>
+
+    <span>Page {page} of {totalPages}</span>
+
+    <button
+      className="book-btn"
+      disabled={page >= totalPages || reservationLoading}
+      onClick={() => fetchReservations(page + 1)}
+    >
+      Next
+    </button>
+  </div>
+)}
       </div>
     </div>
   );

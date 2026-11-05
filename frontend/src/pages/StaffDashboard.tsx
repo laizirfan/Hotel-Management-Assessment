@@ -45,7 +45,7 @@ function StaffDashboard() {
   const [reservationLoading, setReservationLoading] = useState(false);
   const [reservationError, setReservationError] = useState('');
   const [search, setSearch] = useState('');
-const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
 
   async function createRoom(e: React.SubmitEvent<HTMLFormElement>) {
@@ -206,16 +206,16 @@ const [statusFilter, setStatusFilter] = useState('');
     try {
       const params = new URLSearchParams();
 
-if (search.trim()) {
-  params.set('search', search.trim());
-}
+      if (search.trim()) {
+        params.set('search', search.trim());
+      }
 
-if (statusFilter) {
-  params.set('status', statusFilter);
-}
+      if (statusFilter) {
+        params.set('status', statusFilter);
+      }
 
-const response = await fetch(
-  `/api/reservations/staff/all?${params.toString()}`, {
+      const response = await fetch(
+        `/api/reservations/staff/all?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -233,6 +233,49 @@ const response = await fetch(
       setReservationLoading(false);
     }
   }
+
+
+  async function updateReservationStatus(
+    reservationId: string,
+    action: 'check-in' | 'check-out'
+  ) {
+    const token = sessionStorage.getItem('token');
+
+    if (!token) {
+      setReservationError('Please login as staff');
+      return;
+    }
+
+    setReservationError('');
+
+    try {
+      const response = await fetch(
+        `/api/reservations/${reservationId}/${action}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update reservation');
+      }
+
+      await fetchReservations();
+
+    } catch (error) {
+      setReservationError(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong'
+      );
+    }
+  }
+
 
   useEffect(() => {
     async function fetchRooms() {
@@ -426,42 +469,36 @@ const response = await fetch(
 
       <div style={{ marginTop: '40px' }}>
         <h2>Guest Reservations</h2>
-        <div className="date-selection">
-  <label>
-    Search Guest
-    <input
-      type="text"
-      placeholder="Name or email"
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-    />
-  </label>
+        <div className="reservation-filters">
+          <label>
+            Search Guest
+            <input
+              type="text"
+              placeholder="Name or email"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </label>
 
-  <label>
-    Reservation Status
-    <select
-      value={statusFilter}
-      onChange={(e) => setStatusFilter(e.target.value)}
-      style={{
-        width: '227px',
-        height: '67px',
-        padding: '12px',
-        borderRadius: '8px',
-        border: '1px solid #cbd5e1',
-      }}
-    >
-      <option value="">All Statuses</option>
-      <option value="confirmed">Confirmed</option>
-      <option value="checked_in">Checked In</option>
-      <option value="checked_out">Checked Out</option>
-      <option value="cancelled">Cancelled</option>
-    </select>
-  </label>
+          <label>
+            Reservation Status
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+        
+            >
+              <option value="">All Statuses</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="checked_in">Checked In</option>
+              <option value="checked_out">Checked Out</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </label>
 
-  <button className="book-btn" onClick={fetchReservations}>
-    Search Reservations
-  </button>
-</div>
+          <button className="book-btn" onClick={fetchReservations}>
+            Search Reservations
+          </button>
+        </div>
         {reservationLoading && <p>Loading reservations...</p>}
         {reservationError && <p>{reservationError}</p>}
         <div className="room-grid">
@@ -475,6 +512,16 @@ const response = await fetch(
               <p>Rooms Booked: {reservation.roomsBooked}</p>
               <p>Total Price: ₹{reservation.totalPrice}</p>
               <p>Status: <strong>{reservation.status}</strong></p>
+
+              {reservation.status === 'confirmed' && (
+                <button className="book-btn" onClick={() => updateReservationStatus(reservation._id, 'check-in')}>
+                  Check In</button>
+              )}
+
+              {reservation.status === 'checked_in' && (
+                <button className="book-btn" onClick={() => updateReservationStatus(reservation._id, 'check-out')}>
+                  Check Out</button>
+              )}
             </div>
           ))}
         </div>

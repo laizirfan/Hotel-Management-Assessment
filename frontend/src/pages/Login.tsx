@@ -1,11 +1,23 @@
 
-import { useState } from 'react';
+import { useState ,useEffect} from 'react';
 import type { FormEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 
 function Login() {
+
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+useEffect(() => {
+  setEmail('');
+  setPassword('');
+}, [location.key]);
 
   async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,10 +34,21 @@ function Login() {
 
       const data = await response.json();
 
-      if (response.ok && data.token) {
-        sessionStorage.setItem('token', data.token);
-        setMessage('Login successful!');
-      } else {
+    
+if (response.ok && data.token) {
+  sessionStorage.setItem('token', data.token);
+  sessionStorage.setItem('role', data.user.role);
+
+  setEmail('');
+  setPassword('');
+
+  if (data.user.role === 'staff') {
+    navigate('/staff', { replace: true });
+  } else {
+    navigate('/', { replace: true });
+  }
+}
+ else {
         setMessage(data.message || 'Login failed');
       }
     } catch {
@@ -44,14 +67,15 @@ function Login() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
         />
-
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="current-password"
         />
 
         <button type="submit">Login</button>

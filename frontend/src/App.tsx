@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from 'react-router-dom';
+import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import './App.css';
@@ -7,9 +7,19 @@ import MyReservations from './pages/MyReservations';
 import StaffDashboard from './pages/StaffDashboard';
 
 function App() {
+
+  const navigate = useNavigate();
+
+function handleLogout() {
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('role');
+  navigate('/login', { replace: true });
+}
+
   return (
     <div>
       <nav className="navbar">
+        
         <h2>Hotel Management</h2>
 
         <div className="nav-links">
@@ -18,6 +28,9 @@ function App() {
           <Link to="/login">Login</Link>
           <Link to="/register">Register</Link>
           <Link to="/staff">Staff Dashboard</Link>
+          <button onClick={handleLogout} className="logout-btn">
+  Logout
+</button>
         </div>
       </nav>
 

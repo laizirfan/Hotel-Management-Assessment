@@ -416,30 +416,55 @@ setTotalPages(data.pagination.totalPages);
       <h2 style={{ marginTop: '35px' }}>Existing Room Types</h2>
       {loading && <p>Loading rooms...</p>}
       {error && <p>{error}</p>}
-      <div className="room-grid">
-        {rooms.map((room) => (
-          <div className="room-card" key={room._id}>
-            <h2>{room.name}</h2>
-            <p>Price: ₹{room.pricePerNight} / night</p>
-            <p>Capacity: {room.capacity} guests</p>
-            <p>Total Inventory: {room.totalInventory}</p>
-            <p>Facilities: {room.facilities.join(', ')}</p>
-            <button className="book-btn" onClick={() => { setEditingRoom(room); }}>Edit Room</button>
-            <button
-              className="book-btn"
-              style={{ marginLeft: '10px' }}
-              onClick={() => {
-                setEditingRoom(null);
-                setInventoryRoom(room);
-                setNewInventory(String(room.totalInventory));
-                setInventoryMessage('');
-              }}
-            >
-              Manage Inventory
-            </button>
-          </div>
-        ))}
+     <div className="room-grid">
+  {rooms.map((room) => (
+    <div className="staff-room-card" key={room._id}>
+      <div className="staff-room-header">
+        <h3>{room.name}</h3>
+        <span className="staff-room-inventory">
+          {room.totalInventory} rooms
+        </span>
       </div>
+
+      <div className="staff-room-price">
+        ₹{room.pricePerNight.toLocaleString('en-IN')}
+        <span> / night</span>
+      </div>
+
+      <p className="staff-room-capacity">
+        Capacity: {room.capacity} guests
+      </p>
+
+      <p className="staff-room-facilities">
+        {room.facilities.join(' • ') || 'No facilities listed'}
+      </p>
+
+      <div className="staff-room-actions">
+        <button
+          className="book-btn"
+          onClick={() => {
+            setInventoryRoom(null);
+            setEditingRoom(room);
+          }}
+        >
+          Edit Room
+        </button>
+
+        <button
+          className="book-btn"
+          onClick={() => {
+            setEditingRoom(null);
+            setInventoryRoom(room);
+            setNewInventory(String(room.totalInventory));
+            setInventoryMessage('');
+          }}
+        >
+          Manage Inventory
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
 
       {editingRoom && (
         <div className="form-container"  ref={roomActionRef}>

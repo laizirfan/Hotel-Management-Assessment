@@ -477,3 +477,70 @@
   width: 100%;
   margin-top: 20px;
 }
+
+.staff-room-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.staff-room-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.staff-room-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.staff-room-inventory {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.staff-room-price {
+  margin-top: 18px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.staff-room-price span {
+  font-size: 13px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.staff-room-capacity,
+.staff-room-facilities {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.staff-room-facilities {
+  min-height: 42px;
+}
+
+.staff-room-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.staff-room-actions button {
+  flex: 1;
+  min-width: 120px;
+}

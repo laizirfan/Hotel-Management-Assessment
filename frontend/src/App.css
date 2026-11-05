@@ -544,3 +544,92 @@
   flex: 1;
   min-width: 120px;
 }
+
+
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 48px;
+}
+
+.password-field .password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: #111827;
+
+  cursor: pointer;
+}
+
+.password-field .password-toggle:hover,
+.password-field .password-toggle:focus,
+.password-field .password-toggle:active {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #111827;
+}
+
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 42px;
+}
+
+.password-field button.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 30px;
+  height: 30px;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent !important;
+  border: 0 !important;
+  outline: none;
+  box-shadow: none !important;
+  color: #111827 !important;
+  cursor: pointer;
+}
+
+.password-field button.password-toggle:hover,
+.password-field button.password-toggle:focus,
+.password-field button.password-toggle:active {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}

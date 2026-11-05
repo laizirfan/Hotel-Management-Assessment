@@ -2,7 +2,7 @@
 import { useState ,useEffect} from 'react';
 import type { FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
+import { Eye, EyeOff } from 'lucide-react';
 
 type LoginProps = {
   onLoginSuccess: (token: string, role: string) => void;
@@ -13,6 +13,7 @@ function Login({ onLoginSuccess }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -72,14 +73,26 @@ if (response.ok && data.token) {
           required
           autoComplete="email"
         />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoComplete="current-password"
-        />
+       <div className="password-field">
+  <input
+    type={showPassword ? 'text' : 'password'}
+    placeholder="Password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    autoComplete="current-password"
+    required
+  />
+
+  <button
+    type="button"
+    className="password-toggle"
+    onClick={() => setShowPassword(!showPassword)}
+    aria-label={showPassword ? 'Hide password' : 'Show password'}
+    title={showPassword ? 'Hide password' : 'Show password'}
+  >
+    {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+  </button>
+</div>
 
         <button type="submit">Login</button>
       </form>

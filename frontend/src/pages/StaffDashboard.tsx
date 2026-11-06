@@ -57,7 +57,7 @@ function StaffDashboard() {
   const [reservationError, setReservationError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-
+const [checkInDateFilter, setCheckInDateFilter] = useState('');
   const [page, setPage] = useState(1);
 const [totalPages, setTotalPages] = useState(1);
 
@@ -312,7 +312,12 @@ setShowCreateRoom(false);
     }
   }
 
-  async function fetchReservations(pageNumber = 1, guestSearch = search, reservationStatus = statusFilter) {
+async function fetchReservations(
+  pageNumber = 1,
+  guestSearch = search,
+  reservationStatus = statusFilter,
+  selectedCheckInDate = checkInDateFilter
+) {
 
     const token = sessionStorage.getItem('token');
     if (!token) {
@@ -333,6 +338,10 @@ setShowCreateRoom(false);
       if (reservationStatus) {
         params.set('status', reservationStatus);
       }
+
+      if (selectedCheckInDate) {
+  params.set('checkInDate', selectedCheckInDate);
+}
 
       const response = await fetch(
         `/api/reservations/staff/all?${params.toString()}`, {
@@ -462,6 +471,7 @@ setTotalPages(data.pagination.totalPages);
        setReservationLoading(false);
        setSearch('');
        setStatusFilter('');
+       setCheckInDateFilter('');
        setReservations([]);
        setPage(1);
        setTotalPages(1);
@@ -482,16 +492,14 @@ setTotalPages(data.pagination.totalPages);
     className="dashboard-card"
    onClick={() => {
   resetCreateRoomForm();
-
   setEditingRoom(null);
   setInventoryRoom(null);
-
   setActiveSection('reservations');
   setSearch('');
   setStatusFilter('');
+  setCheckInDateFilter('');
   setPage(1);
-
-  fetchReservations(1, '', '');
+  fetchReservations(1, '', '', '');
 }}
     style={{
       cursor: 'pointer',
@@ -781,7 +789,14 @@ setTotalPages(data.pagination.totalPages);
               <option value="cancelled">Cancelled</option>
             </select>
           </label>
-
+<label>
+  Check-in Date
+  <input
+    type="date"
+    value={checkInDateFilter}
+    onChange={(e) => setCheckInDateFilter(e.target.value)}
+  />
+</label>
           <button className="book-btn" onClick={() => fetchReservations(1)}>
             Search Reservations
           </button>

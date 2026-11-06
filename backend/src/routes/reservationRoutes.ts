@@ -338,12 +338,34 @@ router.get("/staff/summary", authMiddleware, staffOnly, async (req, res) => {
 // Staff - View reservations with filtering and pagination
 router.get("/staff/all", authMiddleware, staffOnly, async (req, res) => {
     try {
-        const { status, search } = req.query;
+        const { status, search, checkInDate } = req.query;
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = 10;
         const skip = (page - 1) * limit;
 
         const filter: Record<string, unknown> = {};
+        // Filter reservations by check-in date
+if (typeof checkInDate === "string" && checkInDate) {
+  const date = new Date(checkInDate);
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(checkInDate) ||
+    Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== checkInDate
+  ) {
+    return res.status(400).json({
+      message: "Invalid check-in date"
+    });
+  }
+
+  const nextDate = new Date(date);
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+
+  filter.checkIn = {
+    $gte: date,
+    $lt: nextDate
+  };
+}
 
         if (typeof status === "string" && status) {
             const allowedStatuses = [
@@ -388,7 +410,7 @@ router.get("/staff/all", authMiddleware, staffOnly, async (req, res) => {
             Reservation.find(filter)
                 .populate("guest", "name email")
                 .populate("roomType", "name pricePerNight")
-                .sort({ createdAt: -1 })
+                .sort({ createdAt: -1, _id: -1 })
                 .skip(skip)
                 .limit(limit),
 

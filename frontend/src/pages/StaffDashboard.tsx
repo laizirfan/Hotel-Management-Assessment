@@ -58,6 +58,17 @@ const [showCreateRoom, setShowCreateRoom] = useState(false);
 const roomActionRef = useRef<HTMLDivElement | null>(null);
 const reservationRequestId = useRef(0);
 
+function resetCreateRoomForm() {
+  setName('');
+  setPrice('');
+  setCapacity('');
+  setInventory('');
+  setDescription('');
+  setFacilities('');
+  setMessage('');
+  setShowCreateRoom(false);
+}
+
 useEffect(() => {
   if (editingRoom || inventoryRoom) {
     roomActionRef.current?.scrollIntoView({
@@ -359,13 +370,19 @@ setTotalPages(data.pagination.totalPages);
 
   <div
     className="dashboard-card"
-    onClick={() => {
-      setActiveSection('reservations');
-      setSearch('');
-      setStatusFilter('');
-      setPage(1);
-      fetchReservations(1, '', '');
-    }}
+   onClick={() => {
+  resetCreateRoomForm();
+
+  setEditingRoom(null);
+  setInventoryRoom(null);
+
+  setActiveSection('reservations');
+  setSearch('');
+  setStatusFilter('');
+  setPage(1);
+
+  fetchReservations(1, '', '');
+}}
     style={{
       cursor: 'pointer',
       border: activeSection === 'reservations'
@@ -383,7 +400,14 @@ setTotalPages(data.pagination.totalPages);
   <div style={{ marginTop: '25px', marginBottom: '20px' }}>
   <button
     className="book-btn"
-    onClick={() => setShowCreateRoom(!showCreateRoom)}
+    onClick={() => {
+  if (showCreateRoom) {
+    resetCreateRoomForm();
+  } else {
+    resetCreateRoomForm();
+    setShowCreateRoom(true);
+  }
+}}
   >
     {showCreateRoom ? 'Cancel' : '+ Create New Room'}
   </button>

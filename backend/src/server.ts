@@ -13,15 +13,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/reservations", reservationRoutes);
 
 app.get('/', (req, res) => {
-    res.send("Hotel Managment API running");
+    res.send("Hotel Management  API running");
 })
 
 async function startServer() {
     try {
         await connectDB();
-        app.listen(5000, () => {
-            console.log("Server running on port 5000");
+        const PORT = Number(process.env.PORT) || 5000;
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
         });
+
     } catch (error) {
         console.error("Unable to start server:", error);
         process.exit(1);

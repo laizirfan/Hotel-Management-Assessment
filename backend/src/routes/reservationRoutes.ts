@@ -21,33 +21,23 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
         //  Calculate number of nights
         const millisecondsPerDay = 1000 * 60 * 60 * 24;
 
-        const numberOfNights =
-            (endDate.getTime() - startDate.getTime()) / millisecondsPerDay;
+        const numberOfNights = (endDate.getTime() - startDate.getTime()) / millisecondsPerDay;
 
         //  Validate number of rooms
-        if (
-            typeof roomsBooked !== "number" ||
-            !Number.isInteger(roomsBooked) ||
-            roomsBooked < 1
-        ) {
+        if (typeof roomsBooked !== "number" || !Number.isInteger(roomsBooked) || roomsBooked < 1) {
             return res.status(400).json({
                 message: "Rooms booked must be a positive whole number"
             });
         }
 
         // Validate guest count
-        if (
-            typeof guestCount !== "number" ||
-            !Number.isInteger(guestCount) ||
-            guestCount < 1
-        ) {
+        if (typeof guestCount !== "number" || !Number.isInteger(guestCount) || guestCount < 1) {
             return res.status(400).json({
                 message: "Guest count must be a positive whole number"
             });
         }
 
         // Validate MongoDB room ID
-
         if (!mongoose.isValidObjectId(roomTypeId)) {
             return res.status(400).json({
                 message: "Invalid room type ID"
@@ -111,7 +101,6 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
                     { $inc: { bookingVersion: 1 } },
                     { session }
                 );
-
                 //  Create reservation
                 const createdReservations = await Reservation.create(
                     [{
@@ -143,12 +132,12 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
     } catch (error) {
         if (error instanceof Error) {
             // Handle concurrent booking conflicts
-const mongoError = error as Error & { code?: number; errorLabels?: string[];};
-if ( mongoError.code === 112 ||mongoError.errorLabels?.includes("TransientTransactionError")) {
-    return res.status(409).json({
-        message: "Booking conflict. Please check availability and try again."
-    });
-}
+            const mongoError = error as Error & { code?: number; errorLabels?: string[]; };
+            if (mongoError.code === 112 || mongoError.errorLabels?.includes("TransientTransactionError")) {
+                return res.status(409).json({
+                    message: "Booking conflict. Please check availability and try again."
+                });
+            }
             if (error.message === "ROOM_NOT_FOUND") {
                 return res.status(404).json({
                     message: "Room type not found"
@@ -181,7 +170,6 @@ router.get("/my", authMiddleware, async (req: AuthRequest, res) => {
         const filter = {
             guest: req.user!.userId
         };
-
         const [reservations, total] = await Promise.all([
             Reservation.find(filter)
                 .populate("roomType", "name pricePerNight capacity")
@@ -212,14 +200,12 @@ router.get("/my", authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-
 router.patch("/:id/cancel", authMiddleware, async (req: AuthRequest, res) => {
     if (!mongoose.isValidObjectId(req.params.id)) {
         return res.status(400).json({
             message: "Invalid reservation ID"
         });
     }
-
     const session = await mongoose.startSession();
     try {
         let cancelledReservation;
@@ -287,7 +273,6 @@ router.patch("/:id/cancel", authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-
 // Staff - Dashboard summary
 router.get("/staff/summary", authMiddleware, staffOnly, async (req, res) => {
     try {
@@ -307,26 +292,21 @@ router.get("/staff/summary", authMiddleware, staffOnly, async (req, res) => {
                 checkIn: { $gte: today, $lt: tomorrow },
                 status: "confirmed"
             }),
-
             Reservation.countDocuments({
                 checkOut: { $gte: today, $lt: tomorrow },
                 status: "checked_in"
             }),
-
             Reservation.find({
                 status: "checked_in"
             }).select("roomsBooked"),
-
             Reservation.countDocuments({
                 status: "confirmed"
             })
         ]);
-
         const occupiedRooms = occupiedReservations.reduce(
             (total, reservation) => total + reservation.roomsBooked,
             0
         );
-
         return res.status(200).json({
             todaysArrivals,
             todaysDepartures,
@@ -352,28 +332,25 @@ router.get("/staff/all", authMiddleware, staffOnly, async (req, res) => {
 
         const filter: Record<string, unknown> = {};
         // Filter reservations by check-in date
-if (typeof checkInDate === "string" && checkInDate) {
-  const date = new Date(checkInDate);
+        if (typeof checkInDate === "string" && checkInDate) {
+            const date = new Date(checkInDate);
 
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(checkInDate) ||
-    Number.isNaN(date.getTime()) ||
-    date.toISOString().slice(0, 10) !== checkInDate
-  ) {
-    return res.status(400).json({
-      message: "Invalid check-in date"
-    });
-  }
-
-  const nextDate = new Date(date);
-  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
-
-  filter.checkIn = {
-    $gte: date,
-    $lt: nextDate
-  };
-}
-
+            if (
+                !/^\d{4}-\d{2}-\d{2}$/.test(checkInDate) ||
+                Number.isNaN(date.getTime()) ||
+                date.toISOString().slice(0, 10) !== checkInDate
+            ) {
+                return res.status(400).json({
+                    message: "Invalid check-in date"
+                });
+            }
+            const nextDate = new Date(date);
+            nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+            filter.checkIn = {
+                $gte: date,
+                $lt: nextDate
+            };
+        }
         if (typeof status === "string" && status) {
             const allowedStatuses = [
                 "confirmed",
@@ -387,7 +364,6 @@ if (typeof checkInDate === "string" && checkInDate) {
                     message: "Invalid reservation status"
                 });
             }
-
             filter.status = status;
         }
         // Search reservations by guest name or email
@@ -412,7 +388,6 @@ if (typeof checkInDate === "string" && checkInDate) {
                 $in: matchingGuests.map((guest) => guest._id)
             };
         }
-
         const [reservations, total] = await Promise.all([
             Reservation.find(filter)
                 .populate("guest", "name email")
@@ -420,7 +395,6 @@ if (typeof checkInDate === "string" && checkInDate) {
                 .sort({ createdAt: -1, _id: -1 })
                 .skip(skip)
                 .limit(limit),
-
             Reservation.countDocuments(filter)
         ]);
 
@@ -434,7 +408,6 @@ if (typeof checkInDate === "string" && checkInDate) {
                 totalPages: Math.ceil(total / limit)
             }
         });
-
     } catch (error) {
         console.error(error);
 
@@ -443,7 +416,6 @@ if (typeof checkInDate === "string" && checkInDate) {
         });
     }
 });
-
 
 // Staff - Check in a guest
 router.patch("/:id/check-in", authMiddleware, staffOnly, async (req, res) => {

@@ -1,4 +1,3 @@
-
 /* Navbar */
 
 .navbar {
@@ -370,6 +369,7 @@
 }
 
 @media (max-width: 768px) {
+
   .reservation-filters label,
   .reservation-filters input,
   .reservation-filters select,

@@ -1,17 +1,11 @@
-# Dependencies
-node_modules/
 
-# Environment variables and secrets
+node_modules/
 .env
 .env.*
 !.env.example
-
-# Build output
 dist/
-
-# Logs
 *.log
-
-# Local testing files
 backend/concurrency-test.js
 backend/requests.http
+coverage/
+.DS_Store

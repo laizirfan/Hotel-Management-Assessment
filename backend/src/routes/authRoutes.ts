@@ -121,8 +121,6 @@ return res.status(200).json({
         role: user.role
     }
 });
-
-
     } catch (error) {
         console.error(error);
         res.status(500).json({

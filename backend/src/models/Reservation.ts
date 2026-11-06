@@ -1,8 +1,16 @@
 
 import mongoose from "mongoose";
+import { randomUUID } from "node:crypto";
 
 const reservationSchema = new mongoose.Schema(
   {
+    reservationReference: {
+      type: String,
+      required: true,
+      unique: true,
+      default: () => `RES-${randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`
+    },
+
     guest: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

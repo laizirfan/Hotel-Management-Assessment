@@ -4,46 +4,20 @@ import roomType from "../models/RoomType";
 import { authMiddleware, staffOnly, AuthRequest } from "../middleware/authMiddleware";
 import mongoose from "mongoose";
 import User from "../models/User";
+import { validateBookingDates } from "../utils/bookingValidation";
 
 const router = Router();
 
 router.post("/", authMiddleware, async (req: AuthRequest, res) => {
     try {
-   const { roomTypeId, checkIn, checkOut, roomsBooked, guestCount } = req.body;
-
+        const { roomTypeId, checkIn, checkOut, roomsBooked, guestCount } = req.body;
         //  Validate date
-        if (typeof checkIn !== "string" || typeof checkOut !== "string") {
-            return res.status(400).json({ message: "Dates are required" });
+        const dateError = validateBookingDates(checkIn, checkOut);
+        if (dateError) {
+            return res.status(400).json({ message: dateError });
         }
-
         const startDate = new Date(checkIn);
         const endDate = new Date(checkOut);
-
-        function isValidDate(value: string, date: Date) {
-            return /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-                !Number.isNaN(date.getTime()) &&
-                date.toISOString().slice(0, 10) === value;
-        }
-
-        if (!isValidDate(checkIn, startDate) || !isValidDate(checkOut, endDate)) {
-            return res.status(400).json({ message: "Invalid date" });
-        }
-
-        if (endDate <= startDate) {
-            return res.status(400).json({
-                message: "Check-out must be after check-in"
-            });
-        }
-
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
-
-        if (startDate < today) {
-            return res.status(400).json({
-                message: "Check-in date must be today or a future date"
-            });
-        }
-
         //  Calculate number of nights
         const millisecondsPerDay = 1000 * 60 * 60 * 24;
 
@@ -62,15 +36,15 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
         }
 
         // Validate guest count
-if (
-    typeof guestCount !== "number" ||
-    !Number.isInteger(guestCount) ||
-    guestCount < 1
-) {
-    return res.status(400).json({
-        message: "Guest count must be a positive whole number"
-    });
-}
+        if (
+            typeof guestCount !== "number" ||
+            !Number.isInteger(guestCount) ||
+            guestCount < 1
+        ) {
+            return res.status(400).json({
+                message: "Guest count must be a positive whole number"
+            });
+        }
 
         // Validate MongoDB room ID
 
@@ -98,7 +72,7 @@ if (
                 const maximumGuests = room.capacity * roomsBooked;
                 if (guestCount > maximumGuests) {
                     throw new Error("GUEST_CAPACITY_EXCEEDED");
-}
+                }
 
                 //  Calculate price using database values
                 const totalPrice = numberOfNights * room.pricePerNight * roomsBooked;
@@ -141,15 +115,15 @@ if (
                 //  Create reservation
                 const createdReservations = await Reservation.create(
                     [{
-                       guest: req.user!.userId,
-        roomType: room._id,
-        checkIn: startDate,
-        checkOut: endDate,
-        guestCount: guestCount,            
-        roomsBooked: roomsBooked,
-        pricePerNight: room.pricePerNight, 
-        totalPrice: totalPrice,
-        status: "confirmed"
+                        guest: req.user!.userId,
+                        roomType: room._id,
+                        checkIn: startDate,
+                        checkOut: endDate,
+                        guestCount: guestCount,
+                        roomsBooked: roomsBooked,
+                        pricePerNight: room.pricePerNight,
+                        totalPrice: totalPrice,
+                        status: "confirmed"
                     }
                     ],
                     { session }
@@ -179,10 +153,10 @@ if (
                 });
             }
             if (error.message === "GUEST_CAPACITY_EXCEEDED") {
-    return res.status(400).json({
-        message: "Guest count exceeds the capacity of the selected rooms"
-    });
-}
+                return res.status(400).json({
+                    message: "Guest count exceeds the capacity of the selected rooms"
+                });
+            }
         }
         console.error(error);
         return res.status(500).json({
@@ -192,43 +166,43 @@ if (
 });
 
 router.get("/my", authMiddleware, async (req: AuthRequest, res) => {
-  try {
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = 10;
-    const skip = (page - 1) * limit;
+    try {
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = 10;
+        const skip = (page - 1) * limit;
 
-    const filter = {
-      guest: req.user!.userId
-    };
+        const filter = {
+            guest: req.user!.userId
+        };
 
-    const [reservations, total] = await Promise.all([
-      Reservation.find(filter)
-        .populate("roomType", "name pricePerNight capacity")
-        .sort({ createdAt: -1, _id: -1 })
-        .skip(skip)
-        .limit(limit),
+        const [reservations, total] = await Promise.all([
+            Reservation.find(filter)
+                .populate("roomType", "name pricePerNight capacity")
+                .sort({ createdAt: -1, _id: -1 })
+                .skip(skip)
+                .limit(limit),
 
-      Reservation.countDocuments(filter)
-    ]);
+            Reservation.countDocuments(filter)
+        ]);
 
-    return res.status(200).json({
-      message: "Reservations fetched successfully",
-      reservations,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    });
+        return res.status(200).json({
+            message: "Reservations fetched successfully",
+            reservations,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
 
-  } catch (error) {
-    console.error(error);
+    } catch (error) {
+        console.error(error);
 
-    return res.status(500).json({
-      message: "Failed to fetch reservations"
-    });
-  }
+        return res.status(500).json({
+            message: "Failed to fetch reservations"
+        });
+    }
 });
 
 
@@ -309,56 +283,56 @@ router.patch("/:id/cancel", authMiddleware, async (req: AuthRequest, res) => {
 
 // Staff - Dashboard summary
 router.get("/staff/summary", authMiddleware, staffOnly, async (req, res) => {
-  try {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    try {
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
 
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+        const tomorrow = new Date(today);
+        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
-    const [
-      todaysArrivals,
-      todaysDepartures,
-      occupiedReservations,
-      pendingReservations
-    ] = await Promise.all([
-      Reservation.countDocuments({
-        checkIn: { $gte: today, $lt: tomorrow },
-        status: "confirmed"
-      }),
+        const [
+            todaysArrivals,
+            todaysDepartures,
+            occupiedReservations,
+            pendingReservations
+        ] = await Promise.all([
+            Reservation.countDocuments({
+                checkIn: { $gte: today, $lt: tomorrow },
+                status: "confirmed"
+            }),
 
-      Reservation.countDocuments({
-        checkOut: { $gte: today, $lt: tomorrow },
-        status: "checked_in"
-      }),
+            Reservation.countDocuments({
+                checkOut: { $gte: today, $lt: tomorrow },
+                status: "checked_in"
+            }),
 
-      Reservation.find({
-        status: "checked_in"
-      }).select("roomsBooked"),
+            Reservation.find({
+                status: "checked_in"
+            }).select("roomsBooked"),
 
-      Reservation.countDocuments({
-        status: "confirmed"
-      })
-    ]);
+            Reservation.countDocuments({
+                status: "confirmed"
+            })
+        ]);
 
-    const occupiedRooms = occupiedReservations.reduce(
-      (total, reservation) => total + reservation.roomsBooked,
-      0
-    );
+        const occupiedRooms = occupiedReservations.reduce(
+            (total, reservation) => total + reservation.roomsBooked,
+            0
+        );
 
-    return res.status(200).json({
-      todaysArrivals,
-      todaysDepartures,
-      occupiedRooms,
-      pendingReservations
-    });
+        return res.status(200).json({
+            todaysArrivals,
+            todaysDepartures,
+            occupiedRooms,
+            pendingReservations
+        });
 
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Failed to load dashboard summary"
-    });
-  }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: "Failed to load dashboard summary"
+        });
+    }
 });
 
 // Staff - View reservations with filtering and pagination

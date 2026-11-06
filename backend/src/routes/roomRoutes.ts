@@ -5,6 +5,22 @@ import { authMiddleware, staffOnly } from "../middleware/authMiddleware";
 import Reservation from "../models/Reservation";
 const router = Router();
 
+
+// Staff - Get all room types, including inactive rooms
+router.get("/staff/all", authMiddleware, staffOnly, async (req, res) => {
+  try {
+    const rooms = await roomType.find().sort({ name: 1 });
+
+    return res.status(200).json(rooms);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Failed to fetch room types"
+    });
+  }
+});
+
 router.get("/", async (req, res) => {
     try {
         const rooms = await roomType.find({ active: true });

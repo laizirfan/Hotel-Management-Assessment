@@ -10,6 +10,7 @@ type Room = {
   totalInventory: number;
   description: string;
   facilities: string[];
+    active: boolean;
 };
 
 type Reservation = {
@@ -26,6 +27,14 @@ type Reservation = {
   roomsBooked: number;
   totalPrice: number;
   status: string;
+};
+
+
+type DashboardSummary = {
+  todaysArrivals: number;
+  todaysDepartures: number;
+  occupiedRooms: number;
+  pendingReservations: number;
 };
 
 function StaffDashboard() {
@@ -55,6 +64,8 @@ const [totalPages, setTotalPages] = useState(1);
 const [activeSection, setActiveSection] = useState<'rooms' | 'reservations'>('rooms');
 const [showCreateRoom, setShowCreateRoom] = useState(false);
 
+const [summary, setSummary] = useState<DashboardSummary | null>(null);
+
 const roomActionRef = useRef<HTMLDivElement | null>(null);
 const reservationRequestId = useRef(0);
 
@@ -78,6 +89,75 @@ useEffect(() => {
   }
 }, [editingRoom, inventoryRoom]);
 
+
+async function fetchSummary() {
+  const token = sessionStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    const response = await fetch('/api/reservations/staff/summary', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load summary');
+    }
+
+    const data: DashboardSummary = await response.json();
+    setSummary(data);
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to load dashboard summary');
+  }
+}
+
+useEffect(() => {
+  fetchSummary();
+}, []);
+
+async function toggleRoomStatus(room: Room) {
+  const token = sessionStorage.getItem('token');
+
+  if (!token) {
+    toast.error('Please login as staff');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/rooms/${room._id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        active: !room.active,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update room status');
+    }
+
+    setRooms((previous) =>
+      previous.map((item) =>
+        item._id === room._id ? { ...item, active: data.room.active } : item
+      )
+    );
+
+    toast.success(
+      data.room.active ? 'Room activated' : 'Room deactivated'
+    );
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : 'Something went wrong'
+    );
+  }
+}
 
   async function createRoom(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -116,7 +196,11 @@ setShowCreateRoom(false);
       setInventory('');
       setDescription('');
       setFacilities('');
-      const roomsResponse = await fetch('/api/rooms');
+      const roomsResponse = await fetch('/api/rooms/staff/all', {
+  headers: {
+    Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+  },
+})
       if (roomsResponse.ok) {
         const updatedRooms: Room[] = await roomsResponse.json();
         setRooms(updatedRooms);
@@ -308,6 +392,7 @@ setTotalPages(data.pagination.totalPages);
 );
 
   await fetchReservations(page);
+  await fetchSummary();
 
     } catch (error) {
        toast.error(
@@ -322,7 +407,11 @@ setTotalPages(data.pagination.totalPages);
   useEffect(() => {
     async function fetchRooms() {
       try {
-        const response = await fetch('/api/rooms');
+        const response = await fetch('/api/rooms/staff/all', {
+  headers: {
+    Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+  },
+})
         if (!response.ok) {
           throw new Error('Failed to load rooms');
         }
@@ -342,6 +431,27 @@ setTotalPages(data.pagination.totalPages);
     <div>
       <h1>Staff Dashboard</h1>
       <p>Manage hotel rooms and guest reservations here.</p>
+      <div className="dashboard-grid">
+  <div className="dashboard-card">
+    <h3>Today's Arrivals</h3>
+    <h2>{summary?.todaysArrivals ?? '—'}</h2>
+  </div>
+
+  <div className="dashboard-card">
+    <h3>Today's Departures</h3>
+    <h2>{summary?.todaysDepartures ?? '—'}</h2>
+  </div>
+
+  <div className="dashboard-card">
+    <h3>Occupied Rooms</h3>
+    <h2>{summary?.occupiedRooms ?? '—'}</h2>
+  </div>
+
+  <div className="dashboard-card">
+    <h3>Pending Reservations</h3>
+    <h2>{summary?.pendingReservations ?? '—'}</h2>
+  </div>
+</div>
     <div className="dashboard-grid">
 
   <div
@@ -476,7 +586,7 @@ setTotalPages(data.pagination.totalPages);
       <p className="staff-room-facilities">
         {room.facilities.join(' • ') || 'No facilities listed'}
       </p>
-
+    <p>Status: {room.active ? 'Active' : 'Inactive'}</p>
       <div className="staff-room-actions">
         <button
           className="book-btn"
@@ -487,6 +597,14 @@ setTotalPages(data.pagination.totalPages);
         >
           Edit Room
         </button>
+
+        <button
+  type="button"
+  className="book-btn"
+  onClick={() => toggleRoomStatus(room)}
+>
+  {room.active ? 'Deactivate' : 'Activate'}
+</button>
 
         <button
           className="book-btn"

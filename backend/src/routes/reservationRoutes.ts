@@ -307,6 +307,60 @@ router.patch("/:id/cancel", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 
+// Staff - Dashboard summary
+router.get("/staff/summary", authMiddleware, staffOnly, async (req, res) => {
+  try {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+    const [
+      todaysArrivals,
+      todaysDepartures,
+      occupiedReservations,
+      pendingReservations
+    ] = await Promise.all([
+      Reservation.countDocuments({
+        checkIn: { $gte: today, $lt: tomorrow },
+        status: "confirmed"
+      }),
+
+      Reservation.countDocuments({
+        checkOut: { $gte: today, $lt: tomorrow },
+        status: "checked_in"
+      }),
+
+      Reservation.find({
+        status: "checked_in"
+      }).select("roomsBooked"),
+
+      Reservation.countDocuments({
+        status: "confirmed"
+      })
+    ]);
+
+    const occupiedRooms = occupiedReservations.reduce(
+      (total, reservation) => total + reservation.roomsBooked,
+      0
+    );
+
+    return res.status(200).json({
+      todaysArrivals,
+      todaysDepartures,
+      occupiedRooms,
+      pendingReservations
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Failed to load dashboard summary"
+    });
+  }
+});
+
 // Staff - View reservations with filtering and pagination
 router.get("/staff/all", authMiddleware, staffOnly, async (req, res) => {
     try {

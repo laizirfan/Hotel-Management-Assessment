@@ -720,3 +720,18 @@
   outline: 2px solid #93c5fd;
   outline-offset: 3px;
 }
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-brand h2 {
+  margin: 0;
+}
+
+.navbar-brand svg {
+  color: #ffffff;
+  flex-shrink: 0;
+}

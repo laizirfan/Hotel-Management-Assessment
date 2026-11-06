@@ -142,6 +142,13 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
 
     } catch (error) {
         if (error instanceof Error) {
+            // Handle concurrent booking conflicts
+const mongoError = error as Error & { code?: number; errorLabels?: string[];};
+if ( mongoError.code === 112 ||mongoError.errorLabels?.includes("TransientTransactionError")) {
+    return res.status(409).json({
+        message: "Booking conflict. Please check availability and try again."
+    });
+}
             if (error.message === "ROOM_NOT_FOUND") {
                 return res.status(404).json({
                     message: "Room type not found"

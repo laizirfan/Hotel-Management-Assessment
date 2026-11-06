@@ -56,6 +56,7 @@ const [activeSection, setActiveSection] = useState<'rooms' | 'reservations'>('ro
 const [showCreateRoom, setShowCreateRoom] = useState(false);
 
 const roomActionRef = useRef<HTMLDivElement | null>(null);
+const reservationRequestId = useRef(0);
 
 useEffect(() => {
   if (editingRoom || inventoryRoom) {
@@ -216,28 +217,26 @@ setShowCreateRoom(false);
     }
   }
 
-  async function fetchReservations(pageNumber = 1) {
-
-    
-      // API request here
+  async function fetchReservations(pageNumber = 1, guestSearch = search, reservationStatus = statusFilter) {
 
     const token = sessionStorage.getItem('token');
     if (!token) {
       setReservationError('Please login as staff');
       return;
     }
+    const requestId = ++reservationRequestId.current;
     setReservationLoading(true);
     setReservationError('');
     try {
       const params = new URLSearchParams();
       params.set('page', String(pageNumber));
 
-      if (search.trim()) {
-        params.set('search', search.trim());
+      if (guestSearch.trim()) {
+        params.set('search', guestSearch.trim());
       }
 
-      if (statusFilter) {
-        params.set('status', statusFilter);
+      if (reservationStatus) {
+        params.set('status', reservationStatus);
       }
 
       const response = await fetch(
@@ -250,15 +249,17 @@ setShowCreateRoom(false);
       if (!response.ok) {
         throw new Error(data.message || 'Failed to load reservations');
       }
+if (requestId !== reservationRequestId.current) return;
 setReservations(data.reservations);
 setPage(data.pagination.page);
 setTotalPages(data.pagination.totalPages);
     } catch (error) {
+      if (requestId !== reservationRequestId.current) return;
       setReservationError(
         error instanceof Error ? error.message : 'Something went wrong'
       );
     } finally {
-      setReservationLoading(false);
+      if (requestId === reservationRequestId.current) setReservationLoading(false);
     }
   }
 
@@ -334,7 +335,17 @@ setTotalPages(data.pagination.totalPages);
 
   <div
     className="dashboard-card"
-    onClick={() => setActiveSection('rooms')}
+    onClick={() => {
+       setActiveSection('rooms');
+       reservationRequestId.current += 1;
+       setReservationLoading(false);
+       setSearch('');
+       setStatusFilter('');
+       setReservations([]);
+       setPage(1);
+       setTotalPages(1);
+       setReservationError('');
+     }}
     style={{
       cursor: 'pointer',
       border: activeSection === 'rooms'
@@ -350,7 +361,10 @@ setTotalPages(data.pagination.totalPages);
     className="dashboard-card"
     onClick={() => {
       setActiveSection('reservations');
-      fetchReservations(1);
+      setSearch('');
+      setStatusFilter('');
+      setPage(1);
+      fetchReservations(1, '', '');
     }}
     style={{
       cursor: 'pointer',

@@ -633,3 +633,61 @@
   border: 0 !important;
   box-shadow: none !important;
 }
+
+
+.guest-rooms-page {
+  padding-bottom: 40px;
+}
+
+.rooms-loading {
+  padding: 50px;
+  text-align: center;
+  color: #1e293b;
+}
+
+.guest-room-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.guest-room-description {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 14px 0 0;
+}
+
+.guest-availability {
+  margin-top: auto;
+  padding-top: 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.available-text {
+  color: #15803d;
+}
+
+.unavailable-text {
+  color: #dc2626;
+}
+
+.guest-book-btn {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.guest-room-card .staff-room-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.guest-room-card .staff-room-price {
+  margin-top: 16px;
+}

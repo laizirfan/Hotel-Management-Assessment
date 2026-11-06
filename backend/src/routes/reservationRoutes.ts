@@ -9,7 +9,7 @@ const router = Router();
 
 router.post("/", authMiddleware, async (req: AuthRequest, res) => {
     try {
-        const { roomTypeId, checkIn, checkOut, roomsBooked } = req.body;
+   const { roomTypeId, checkIn, checkOut, roomsBooked, guestCount } = req.body;
 
         //  Validate date
         if (typeof checkIn !== "string" || typeof checkOut !== "string") {
@@ -61,6 +61,17 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
             });
         }
 
+        // Validate guest count
+if (
+    typeof guestCount !== "number" ||
+    !Number.isInteger(guestCount) ||
+    guestCount < 1
+) {
+    return res.status(400).json({
+        message: "Guest count must be a positive whole number"
+    });
+}
+
         // Validate MongoDB room ID
 
         if (!mongoose.isValidObjectId(roomTypeId)) {
@@ -82,6 +93,12 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
                 if (roomsBooked > room.totalInventory) {
                     throw new Error("ROOM_NOT_AVAILABLE");
                 }
+
+                // Check total guest capacity across booked rooms
+                const maximumGuests = room.capacity * roomsBooked;
+                if (guestCount > maximumGuests) {
+                    throw new Error("GUEST_CAPACITY_EXCEEDED");
+}
 
                 //  Calculate price using database values
                 const totalPrice = numberOfNights * room.pricePerNight * roomsBooked;
@@ -124,13 +141,15 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
                 //  Create reservation
                 const createdReservations = await Reservation.create(
                     [{
-                        guest: req.user!.userId,
-                        roomType: room._id,
-                        checkIn: startDate,
-                        checkOut: endDate,
-                        roomsBooked: roomsBooked,
-                        totalPrice: totalPrice,
-                        status: "confirmed"
+                       guest: req.user!.userId,
+        roomType: room._id,
+        checkIn: startDate,
+        checkOut: endDate,
+        guestCount: guestCount,            
+        roomsBooked: roomsBooked,
+        pricePerNight: room.pricePerNight, 
+        totalPrice: totalPrice,
+        status: "confirmed"
                     }
                     ],
                     { session }
@@ -159,6 +178,11 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
                     message: "Not enough rooms available"
                 });
             }
+            if (error.message === "GUEST_CAPACITY_EXCEEDED") {
+    return res.status(400).json({
+        message: "Guest count exceeds the capacity of the selected rooms"
+    });
+}
         }
         console.error(error);
         return res.status(500).json({
@@ -167,27 +191,44 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-
-// Get reservations of the logged-in guest
 router.get("/my", authMiddleware, async (req: AuthRequest, res) => {
-    try {
-        const reservations = await Reservation.find({
-            guest: req.user!.userId
-        })
-            .populate("roomType", "name pricePerNight capacity")
-            .sort({ createdAt: -1 });
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = 10;
+    const skip = (page - 1) * limit;
 
-        return res.status(200).json({
-            message: "Reservations fetched successfully",
-            reservations
-        });
+    const filter = {
+      guest: req.user!.userId
+    };
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            message: "Failed to fetch reservations"
-        });
-    }
+    const [reservations, total] = await Promise.all([
+      Reservation.find(filter)
+        .populate("roomType", "name pricePerNight capacity")
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limit),
+
+      Reservation.countDocuments(filter)
+    ]);
+
+    return res.status(200).json({
+      message: "Reservations fetched successfully",
+      reservations,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Failed to fetch reservations"
+    });
+  }
 });
 
 

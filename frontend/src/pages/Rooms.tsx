@@ -1,5 +1,5 @@
 
-import { useEffect, useState ,useRef} from 'react';
+import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -24,20 +24,34 @@ function Rooms() {
 
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [roomsBooked, setRoomsBooked] = useState(1);
+  const [guestCount, setGuestCount] = useState(1);
   const [bookingLoading, setBookingLoading] = useState(false);
 
   const bookingFormRef = useRef<HTMLDivElement | null>(null);
 
   const getToday = () => {
-  const now = new Date();
-  const localDate = new Date(
-    now.getTime() - now.getTimezoneOffset() * 60000
-  );
+    const now = new Date();
+    const localDate = new Date(
+      now.getTime() - now.getTimezoneOffset() * 60000
+    );
 
-  return localDate.toISOString().split('T')[0];
-};
+    return localDate.toISOString().split('T')[0];
+  };
 
-const today = getToday();
+  const today = getToday();
+
+  const numberOfNights =
+    checkIn && checkOut && checkOut > checkIn
+      ? Math.round(
+        (new Date(checkOut).getTime() -
+          new Date(checkIn).getTime()) /
+        (1000 * 60 * 60 * 24)
+      )
+      : 0;
+
+  const estimatedTotal = selectedRoom
+    ? numberOfNights * selectedRoom.pricePerNight * roomsBooked
+    : 0;
 
   useEffect(() => {
     async function fetchRooms() {
@@ -61,13 +75,13 @@ const today = getToday();
   }, []);
 
   useEffect(() => {
-  if (selectedRoom) {
-    bookingFormRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    });
-  }
-}, [selectedRoom]);
+    if (selectedRoom) {
+      bookingFormRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [selectedRoom]);
 
   // Clear old availability when dates change
   function handleDateChange(
@@ -160,7 +174,22 @@ const today = getToday();
       toast.error('Please enter a valid number of rooms');
       return;
     }
+    if (
+      !Number.isInteger(guestCount) ||
+      guestCount < 1
+    ) {
+      toast.error('Please enter a valid number of guests');
+      return;
+    }
 
+    const maximumGuests = selectedRoom.capacity * roomsBooked;
+
+    if (guestCount > maximumGuests) {
+      toast.error(
+        `Maximum ${maximumGuests} guests allowed for ${roomsBooked} room(s)`
+      );
+      return;
+    }
     setBookingLoading(true);
 
     try {
@@ -175,6 +204,7 @@ const today = getToday();
           checkIn,
           checkOut,
           roomsBooked,
+          guestCount,
         }),
       });
 
@@ -189,6 +219,7 @@ const today = getToday();
       setSelectedRoom(null);
       setAvailability({});
       setRoomsBooked(1);
+      setGuestCount(1);
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -216,34 +247,34 @@ const today = getToday();
       <div className="date-selection">
         <label>
           Check-in
-         <input
-  type="date"
-  min={today}
-  value={checkIn}
-  onChange={(e) => {
-    const newDate = e.target.value;
+          <input
+            type="date"
+            min={today}
+            value={checkIn}
+            onChange={(e) => {
+              const newDate = e.target.value;
 
-    handleDateChange('checkIn', newDate);
+              handleDateChange('checkIn', newDate);
 
-    if (checkOut && checkOut <= newDate) {
-      setCheckOut('');
-    }
-  }}
-  disabled={checking || bookingLoading}
-/>
+              if (checkOut && checkOut <= newDate) {
+                setCheckOut('');
+              }
+            }}
+            disabled={checking || bookingLoading}
+          />
         </label>
 
         <label>
           Check-out
-        <input
-  type="date"
-  min={checkIn || today}
-  value={checkOut}
-  onChange={(e) =>
-    handleDateChange('checkOut', e.target.value)
-  }
-  disabled={checking || bookingLoading}
-/>
+          <input
+            type="date"
+            min={checkIn || today}
+            value={checkOut}
+            onChange={(e) =>
+              handleDateChange('checkOut', e.target.value)
+            }
+            disabled={checking || bookingLoading}
+          />
         </label>
 
         <button
@@ -310,6 +341,7 @@ const today = getToday();
                 onClick={() => {
                   setSelectedRoom(room);
                   setRoomsBooked(1);
+                  setGuestCount(1);
                 }}
               >
                 Book Now
@@ -324,8 +356,8 @@ const today = getToday();
       )}
 
       {/* Booking form */}
-    {selectedRoom && (
-  <div className="booking-form" ref={bookingFormRef}>
+      {selectedRoom && (
+        <div className="booking-form" ref={bookingFormRef}>
           <h2>Book {selectedRoom.name}</h2>
 
           <p>Check-in: {checkIn}</p>
@@ -349,6 +381,41 @@ const today = getToday();
               }
             />
           </label>
+
+          <label>
+            Number of guests:
+            <input
+              type="number"
+              min="1"
+              max={selectedRoom.capacity * roomsBooked}
+              value={guestCount}
+              disabled={bookingLoading}
+              onChange={(e) =>
+                setGuestCount(Number(e.target.value))
+              }
+            />
+          </label>
+
+          <p>
+            Maximum guests: {selectedRoom.capacity * roomsBooked}
+          </p>
+
+          <div className="booking-price-summary">
+            <p>Number of nights: {numberOfNights}</p>
+
+            <p>
+              ₹{selectedRoom.pricePerNight.toLocaleString('en-IN')}
+              {' × '}
+              {numberOfNights} night(s)
+              {' × '}
+              {roomsBooked} room(s)
+            </p>
+
+            <h3>
+              Estimated Total: ₹
+              {estimatedTotal.toLocaleString('en-IN')}
+            </h3>
+          </div>
 
           <div className="booking-actions">
             <button

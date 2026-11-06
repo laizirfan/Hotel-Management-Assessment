@@ -16,6 +16,8 @@ function MyReservations() {
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
 
     async function cancelReservation(id: string) {
         const confirmed = window.confirm(
@@ -60,26 +62,24 @@ function MyReservations() {
     useEffect(() => {
         async function fetchReservations() {
             const token = sessionStorage.getItem('token');
-
             if (!token) {
                 setError('Please login to view your reservations');
                 setLoading(false);
                 return;
             }
-
             try {
-                const response = await fetch('/api/reservations/my', {
+                const response = await fetch(`/api/reservations/my?page=${page}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-
                 const data = await response.json();
-
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to load reservations');
                 }
                 setReservations(data.reservations);
+                setTotalPages(data.pagination.totalPages);
+                setError('');
             } catch (error) {
                 setError(
                     error instanceof Error ? error.message : 'Something went wrong'
@@ -88,9 +88,9 @@ function MyReservations() {
                 setLoading(false);
             }
         }
-
+        setLoading(true);
         fetchReservations();
-    }, []);
+    }, [page]);
 
     if (loading) return <p>Loading reservations...</p>;
     if (error) return <p>{error}</p>;
@@ -123,6 +123,38 @@ function MyReservations() {
                     </div>
                 ))}
             </div>
+            {totalPages > 1 && (
+    <div
+        className="pagination-controls"
+        style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '15px',
+            marginTop: '24px',
+        }}
+    >
+        <button
+            type="button"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+        >
+            Previous
+        </button>
+
+        <span>
+            Page {page} of {totalPages}
+        </span>
+
+        <button
+            type="button"
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+        >
+            Next
+        </button>
+    </div>
+)}
         </div>
     );
 }
